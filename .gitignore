@@ -1,0 +1,33 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json # 如果你使用npm，则忽略此行
+yarn.lock # 如果你使用yarn，则忽略此行
+
+# 编译输出
+dist/
+build/
+out/
+*.js # 忽略所有编译生成的js文件，除了你的入口文件
+!index.js # 如果index.js是你的入口文件，取消忽略它
+
+# 编辑器和IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+
+# 操作系统生成的文件 #
+.DS_Store
+Thumbs.db
+
+# 项目特定的其他文件和目录
+# 例如，如果你的项目中有一些不需要跟踪的日志文件或配置文件
+logs/
+config.local.json

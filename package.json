@@ -1,0 +1,35 @@
+{
+  "name": "zh2hk",
+  "version": "1.0.0",
+  "description": "A Node.js CLI tool to convert file contents from Simplified Chinese to Traditional Chinese (Hong Kong standard).",
+  "main": "index.js",
+  "bin": {
+    "zh2hk": "./cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leopens/zh2hk.git"
+  },
+  "keywords": [
+    "chinese",
+    "convert",
+    "simplified",
+    "traditional",
+    "zh-cn",
+    "zh-hk",
+    "zh-tw",
+    "cli"
+  ],
+  "author": "leo.duanqs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/leopens/zh2hk/issues"
+  },
+  "homepage": "https://github.com/leopens/zh2hk#readme",
+  "dependencies": {
+    "node-opencc": "^2.0.1"
+  }
+}
