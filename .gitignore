@@ -31,3 +31,4 @@ Thumbs.db
 # 例如，如果你的项目中有一些不需要跟踪的日志文件或配置文件
 logs/
 config.local.json
+CLAUDE.md
