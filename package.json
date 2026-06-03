@@ -1,6 +1,6 @@
 {
   "name": "zh2hk",
-  "version": "1.0.1",
+  "version": "1.1.2",
   "description": "A Node.js CLI tool to convert file contents from Simplified Chinese to Traditional Chinese (Hong Kong standard).",
   "main": "index.js",
   "bin": {

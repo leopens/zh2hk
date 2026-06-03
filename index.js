@@ -12,14 +12,58 @@ function loadGitignore(dir) {
     .readFileSync(gitignorePath, 'utf8')
     .split('\n')
     .map(line => line.trim())
-    .filter(line => line && !line.startsWith('#'));
+    .filter(line => line && !line.startsWith('#'))
+    // Strip trailing '/' so 'node_modules/' matches the directory entry itself.
+    .map(line => line.replace(/\/$/, ''))
+    // Strip leading '/' (root-anchored) so '/node_modules' works at any depth,
+    // matching git's behavior of anchoring to the .gitignore file's directory.
+    .map(line => line.replace(/^\//, ''));
+}
+
+// Walk up from targetDir to find the nearest ancestor with .gitignore or .git.
+// Returns the directory that should be considered the "gitignore root".
+function findGitignoreRoot(targetDir) {
+  let current = path.resolve(targetDir);
+  while (current !== path.dirname(current)) {
+    if (fs.existsSync(path.join(current, '.gitignore'))) return current;
+    if (fs.existsSync(path.join(current, '.git'))) return current;
+    current = path.dirname(current);
+  }
+  // Check the root itself
+  if (fs.existsSync(path.join(current, '.gitignore')) || fs.existsSync(path.join(current, '.git'))) return current;
+  // Fall back to the target directory
+  return targetDir;
+}
+
+// Collect all .gitignore files from gitRoot down to targetDir (inclusive).
+// Returns [{ dir, patterns }] ordered from gitRoot to targetDir.
+function collectGitignores(targetDir, gitRoot) {
+  const result = [];
+  const targetResolved = path.resolve(targetDir);
+  const gitResolved = path.resolve(gitRoot);
+  const relPath = path.relative(gitResolved, targetResolved);
+  const segments = relPath === '' ? [] : relPath.split(path.sep);
+
+  result.push({ dir: gitResolved, patterns: loadGitignore(gitResolved) });
+
+  let current = gitResolved;
+  for (const seg of segments) {
+    current = path.join(current, seg);
+    result.push({ dir: current, patterns: loadGitignore(current) });
+  }
+
+  return result;
 }
 
 function processFiles(directoryPath, fileExtensions) {
-  // Load root .gitignore patterns; gracefully degrade if none exists.
-  const rootPatterns = loadGitignore(directoryPath);
+  // Find the gitignore root (nearest ancestor with .gitignore or .git)
+  const gitRoot = findGitignoreRoot(directoryPath);
+  const gitignores = collectGitignores(directoryPath, gitRoot);
 
-  // Build an ignore instance from a pattern array.
+  // Merge all patterns from root .gitignore down to target directory.
+  // Patterns from parent .gitignore files are inherited cumulatively.
+  const allPatterns = gitignores.flatMap(g => g.patterns);
+
   const makeIgnore = patterns =>
     patterns.length > 0 ? ignore().add(patterns) : ignore();
 
@@ -34,16 +78,19 @@ function processFiles(directoryPath, fileExtensions) {
     const gitIgnore = makeIgnore(patterns);
 
     entries.forEach(entry => {
-      // Build the path relative to the starting directory.
       const entryRelPath = relativePath === '.' ? entry : path.join(relativePath, entry);
 
       if (gitIgnore.ignores(entryRelPath)) return;
 
       const fullPath = path.join(dir, entry);
-      const stat = fs.statSync(fullPath);
+      let stat;
+      try {
+        stat = fs.statSync(fullPath);
+      } catch (e) {
+        return; // skip broken symlinks or inaccessible files
+      }
 
       if (stat.isDirectory()) {
-        // Load this subdirectory's .gitignore (if any) and merge with inherited patterns.
         const subPatterns = loadGitignore(fullPath);
         const childPatterns = subPatterns.length > 0 ? [...patterns, ...subPatterns] : patterns;
         traverse(fullPath, entryRelPath, childPatterns);
@@ -59,7 +106,7 @@ function processFiles(directoryPath, fileExtensions) {
     });
   };
 
-  traverse(directoryPath, '.', rootPatterns);
+  traverse(directoryPath, '.', allPatterns);
 }
 
 module.exports = processFiles;
